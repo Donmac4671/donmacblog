@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donmac Blog System</title>
+  <!-- Quill stylesheet for post editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ========= Global Styles ========= */
+    :root {
+      --bg: #ffffff;
+      --text: #111;
+      --card: #f5f5f5;
+      --accent: #1565c0;
+      --accent-light: #5e92f3;
+      --accent-dark: #003c8f;
+      --error: #d32f2f;
+      --success: #388e3c;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #f1f1f1;
+      --card: #1e1e1e;
+      --accent: #90caf9;
+      --accent-light: #c3fdff;
+      --accent-dark: #5d99c6;
+      --error: #f44336;
+      --success: #4caf50;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s ease, color 0.3s ease;
+      line-height: 1.6;
+    }
+    h1, h2, h3 { line-height: 1.2; }
+    button { cursor: pointer; transition: all 0.2s ease; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ========= Utility Classes ========= */
+    .hidden { display: none !important; }
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .text-center { text-align: center; }
+    .message { padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 5px; font-weight: 500; }
+    .error-message { background-color: rgba(211,47,47, 0.15); color: var(--error); }
+    .success-message { background-color: rgba(56,142,60, 0.15); color: var(--success); }
+
+    /* ========= Header & Navigation ========= */
+    .blog-header {
+      background: var(--accent);
+      color: white;
+      padding: 1rem;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .blog-title { display: inline-block; vertical-align: middle; margin-bottom: 0.5rem; }
+    .blog-description { opacity: 0.9; font-size: 1.1rem; }
+    .header-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .theme-toggle,
+    .admin-login-btn,
+    .nav-button {
+      padding: 0.5rem 1rem;
+      background: var(--accent-dark);
+      border: none;
+      color: white;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .theme-toggle:hover,
+    .admin-login-btn:hover,
+    .nav-button:hover {
+      background: var(--accent-light);
+    }
+    .nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1.5rem 0;
+    }
+
+    /* ========= Logo Styles ========= */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo {
+      height: 60px;
+      width: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--accent-light);
+      color: var(--accent-dark);
+      border-radius: 50%;
+      font-size: 2.5rem;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    .logo:hover {
+      transform: rotate(15deg) scale(1.05);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* ========= Public Posts ========= */
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      padding: 1rem 0;
+    }
+    .post-card {
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .post-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .post-thumbnail {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .post-card-content {
+      padding: 1.5rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .post-title { 
+      margin-bottom: 0.5rem; 
+      color: var(--accent); 
+      font-size: 1.2rem;
+    }
+    .post-meta {
+      display: flex;
+      justify-content: space-between;
+      color: rgba(17,17,17,0.6);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid rgba(17,17,17,0.15);
+      padding-bottom: 0.5rem;
+    }
+    .post-content { 
+      margin-bottom: 1rem;
+      flex-grow: 1;
+    }
+    /* Improved image handling in post cards */
+    .post-content img {
+      max-width: 100%;
+      max-height: 200px;
+      height: auto;
+      width: auto;
+      display: block;
+      margin: 0.5em auto;
+      border-radius: 4px;
+    }
+    .post-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1rem;
+      gap: 0.5rem;
+    }
+    .share-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .share-btn {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .share-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ========= Full Post Page ========= */
+    .full-post {
+      background: var(--card);
+      border-radius: 10px;
+      margin: 2rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .full-post-thumbnail {
+      width: 100%;
+      max-height: 400px;
+      object-fit: cover;
+    }
+    .full-post-content {
+      padding: 2rem;
+    }
+    .full-post-title { 
+      margin-bottom: 1rem; 
+      color: var(--accent); 
+      font-size: 1.8rem;
+    }
+    .full-post-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(17,17,17,0.15);
+    }
+    /* Improved full post image handling */
+    .full-post-content img {
+      max-width: 100%;
+      max-height: 70vh;
+      height: auto;
+      width: auto;
+      display: block;
+      margin: 1em auto;
+      border-radius: 6px;
+      object-fit: contain;
+    }
+    .full-post-content video {
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      display: block;
+      margin: 1em auto;
+      border-radius: 6px;
+    }
+    .full-post-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0 2rem 2rem;
+    }
+
+    /* ========= Comment Page ========= */
+    .comments-page {
+      background: var(--card);
+      padding: 2rem;
+      border-radius: 10px;
+      margin: 2rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .comments-list {
+      margin: 2rem 0;
+    }
+    .comment-box {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 5px;
+      color: var(--text);
+    }
+    .comment-form {
+      margin-top: 2rem;
+    }
+    .comment-form textarea {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100px;
+    }
+    .back-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+      border: none;
+      cursor: pointer;
+    }
+    .back-button span {
+      margin-left: 5px;
+    }
+
+    /* ========= Subscribe & Contact ========= */
+    .subscribe-section, .contact-form {
+      background: var(--card);
+      padding: 2rem;
+      border-radius: 10px;
+      margin: 2rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .subscribe-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    .subscribe-form input {
+      padding: 0.75rem;
+      min-width: 250px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    .subscribe-form button {
+      padding: 0.75rem 1.5rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+    .contact-form form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .contact-form input,
+    .contact-form textarea {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    .contact-form button {
+      padding: 0.75rem 1.5rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    /* ========= Pagination ========= */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 2rem 0;
+    }
+    .pagination-button {
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .pagination-button.active { background: rgba(21,101,192, 0.7); }
+    .pagination-button:disabled {
+      background: rgba(21,101,192, 0.3);
+      cursor: not-allowed;
+    }
+
+    /* ========= Footer ========= */
+    .blog-footer {
+      background: var(--accent);
+      color: white;
+      text-align: center;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    .blog-footer a {
+      color: white;
+      text-decoration: underline;
+    }
+
+    /* ========= Login & Admin Dashboard ========= */
+    .login-page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: rgba(21,101,192, 0.1);
+    }
+    .login-box {
+      background: var(--bg);
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    .login-title { color: var(--accent); text-align: center; margin-bottom: 1.5rem; }
+    .login-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-control {
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      width: 100%;
+    }
+    .login-button {
+      padding: 0.75rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+    .back-to-blog-button {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .admin-header {
+      background: var(--accent);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .admin-header .admin-actions button {
+      margin-left: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent-dark);
+      border: none;
+      color: white;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .admin-header .admin-actions button:hover {
+      background: var(--accent-light);
+    }
+    .admin-main {
+      padding: 2rem;
+      background: var(--bg);
+      min-height: calc(100vh - 68px);
+    }
+    .section-title { color: var(--accent); margin-bottom: 1.5rem; }
+    .post-form {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .form-row { margin-bottom: 1.5rem; }
+    .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    .form-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    .post-form button {
+      margin-top: 1rem;
+      display: block;
+    }
+    .thumbnail-preview {
+      max-width: 100%;
+      max-height: 200px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* ========= Quill Editor ========= */
+    #editor, #edit-editor {
+      height: 500px;
+      background: white;
+      border-radius: 5px;
+      margin: 0 auto;
+    }
+    .ql-editor { min-height: 400px; font-size: 1rem; line-height: 1.6; }
+    /* Standard size for images and videos in editor */
+    .ql-editor img,
+    .ql-editor video {
+      max-width: 100%;
+      max-height: 300px;
+      height: auto;
+      width: auto;
+      display: block;
+      margin: 1rem auto;
+      border-radius: 4px;
+    }
+
+    /* ========= Manage Posts (Admin) ========= */
+    .posts-list { margin-top: 2rem; }
+    .manage-post-item {
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 5px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .manage-post-actions button {
+      margin-left: 0.5rem;
+      padding: 0.3rem 0.6rem;
+      background: var(--accent);
+      border: none;
+      color: white;
+      border-radius: 3px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    /* ========= Modal Styles ========= */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+    }
+    .modal:not(.hidden) {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--bg);
+      padding: 2rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* ========= Privacy Policy Page ========= */
+    .privacy-page {
+      padding: 2rem;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .privacy-page .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    .privacy-page h1, .privacy-page h2 {
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .privacy-page p { margin-bottom: 1rem; }
+    .privacy-page ul {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+    }
+    .privacy-page li { margin-bottom: 0.5rem; }
+    .privacy-page a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .privacy-page a:hover {
+      text-decoration: underline;
+    }
+    .privacy-back-button {
+      margin-top: 2rem;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* ========= Video URL Modal ========= */
+    .video-url-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .video-url-container {
+      background: var(--bg);
+      padding: 2rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .video-url-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .video-url-input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .video-url-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* ========= Share Modal Styles ========= */
+    #share-modal .modal-content {
+      text-align: center;
+    }
+    #share-modal input {
+      width: 80%;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #share-modal .share-options button {
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+  <!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabaseUrl = "https://qknxkxzmnwutqceawjcj.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbnhreHptbnd1dHFjZWF3amNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0NzQ4MjcsImV4cCI6MjA2MzA1MDgyN30.Hp6nzcqLsswoAN0YEnfldUPME7wHQhPHOAhWNE5_jRg";
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Example: Save a post
+  async function savePost(title, content) {
+    await supabase.from("posts").insert([{ title, content }]);
+  }
+
+  // Example: Load posts
+  async function loadPosts() {
+    const { data } = await supabase.from("posts").select("*");
+    console.log(data);
+  }
+</script>
+<body>
+  <!-- [Rest of your HTML content remains exactly the same] -->
+  <div id="container">
+    <!-- PUBLIC BLOG PAGE -->
+    <div id="blog-page">
+      <!-- Header -->
+      <header class="blog-header">
+        <div class="header-content">
+          <div class="logo-container">
+            <div class="logo">D</div>
+            <div class="logo-text">
+              <h1 class="blog-title">Donmac Blog</h1>
+              <p class="blog-description">Stay updated with our latest posts!</p>
+            </div>
+          </div>
+        </div>
+        <div class="header-controls">
+          <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">☀️</span> Theme
+          </button>
+          <button class="admin-login-btn" onclick="showPage('login-page')">Admin Login</button>
+          <div id="admin-logo-change" class="hidden">
+            <input type="file" id="logo-upload" accept="image/*" style="display: none;">
+            <button onclick="uploadLogo()">Upload Logo</button>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Navigation -->
+      <div class="container">
+        <nav class="nav">
+          <button class="nav-button" onclick="filterPosts('all'); showBlogPosts();">All Posts</button>
+          <button class="nav-button" onclick="filterPosts('News')">News</button>
+          <button class="nav-button" onclick="filterPosts('Finance')">Finance</button>
+          <button class="nav-button" onclick="filterPosts('Tutorials')">Tutorials</button>
+          <button class="nav-button" onclick="showAboutPage()">About</button>
+          <button class="nav-button" onclick="search()">Search</button>
+        </nav>
+        
+        <!-- Public Posts Grid -->
+        <main class="posts-grid" id="posts-container">
+          <!-- Posts will be loaded via JavaScript -->
+        </main>
+        
+        <!-- Pagination Buttons -->
+        <div class="pagination" id="pagination-container">
+          <!-- Pagination generated dynamically -->
+        </div>
+        
+        <!-- About Section -->
+        <div id="about-container" class="about-page hidden">
+          <h2>About Donmac Blog</h2>
+          <p>Welcome to Donmac Blog, your premier destination for insightful content across various categories including News, Finance, and Tutorials.</p>
+          <p>Our mission is to provide high-quality, engaging content that informs and educates our readers.</p>
+          <p>Founded in 2025, our platform is driven by a passion for knowledge sharing.</p>
+          <button class="back-button" onclick="showBlogPosts()">← <span>Back to Posts</span></button>
+        </div>
+        
+        <!-- Subscribe Section -->
+        <section class="subscribe-section">
+          <h2>Subscribe to Donmac</h2>
+          <p>Get the latest posts delivered directly to your inbox.</p>
+          <form class="subscribe-form" action="https://buttondown.email/api/emails/embed-subscribe/donmac" method="post" target="_blank">
+            <input type="email" name="email" placeholder="Your email address" required>
+            <button type="submit" class="nav-button">Subscribe</button>
+          </form>
+        </section>
+        
+        <!-- Contact Form Section -->
+        <section class="contact-form">
+          <h2>Contact Us</h2>
+          <form>
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Your Email" required>
+            <textarea placeholder="Your Message" required></textarea>
+            <button type="submit">Send Message</button>
+          </form>
+        </section>
+      </div>
+      
+      <!-- Footer -->
+      <footer class="blog-footer">
+        <div class="container">
+          <p>
+            &copy; 2025 Donmac Blog. All rights reserved.
+            | <a href="#" onclick="showPage('privacy-page')">Privacy Policy</a>
+          </p>
+        </div>
+      </footer>
+    </div>
+    
+    <!-- FULL POST PAGE -->
+    <div id="full-post-page" class="hidden">
+      <header class="blog-header">
+        <div class="header-content">
+          <div class="logo-container">
+            <div class="logo">D</div>
+            <div class="logo-text">
+              <h1 class="blog-title">Donmac Blog</h1>
+              <p class="blog-description">Stay updated with our latest posts!</p>
+            </div>
+          </div>
+        </div>
+        <div class="header-controls">
+          <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon-full">☀️</span> Theme
+          </button>
+          <button class="admin-login-btn" onclick="showPage('login-page')">Admin Login</button>
+        </div>
+      </header>
+      
+      <div class="container">
+        <button class="back-button" onclick="showPage('blog-page')">← <span>Back to Posts</span></button>
+        <div id="full-post-container" class="full-post">
+          <!-- Full post content will be loaded here -->
+        </div>
+        <div class="full-post-actions">
+          <button class="nav-button" onclick="showCommentsPage(currentPostId)">View Comments</button>
+          <!-- Share button for full post view -->
+          <button class="nav-button" onclick="openShareModal(currentPostId)">Share</button>
+          <div class="share-buttons">
+            <button class="share-btn" onclick="sharePost('facebook', currentPostId)"><i class="fab fa-facebook-f"></i></button>
+            <button class="share-btn" onclick="sharePost('twitter', currentPostId)"><i class="fab fa-twitter"></i></button>
+            <button class="share-btn" onclick="sharePost('linkedin', currentPostId)"><i class="fab fa-linkedin-in"></i></button>
+          </div>
+        </div>
+      </div>
+      
+      <footer class="blog-footer">
+        <div class="container">
+          <p>
+            &copy; 2025 Donmac Blog. All rights reserved.
+            | <a href="#" onclick="showPage('privacy-page')">Privacy Policy</a>
+          </p>
+        </div>
+      </footer>
+    </div>
+    
+    <!-- COMMENTS PAGE -->
+    <div id="comments-page" class="hidden">
+      <header class="blog-header">
+        <div class="header-content">
+          <div class="logo-container">
+            <div class="logo">D</div>
+            <div class="logo-text">
+              <h1 class="blog-title">Donmac Blog</h1>
+              <p class="blog-description">Stay updated with our latest posts!</p>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="container">
+        <button class="back-button" onclick="showFullPost(currentPostId)">← <span>Back to Post</span></button>
+        <div id="comments-container" class="comments-page">
+          <!-- Comments will be loaded here -->
+        </div>
+      </div>
+      
+      <footer class="blog-footer">
+        <div class="container">
+          <p>
+            &copy; 2025 Donmac Blog. All rights reserved.
+            | <a href="#" onclick="showPage('privacy-page')">Privacy Policy</a>
+          </p>
+        </div>
+      </footer>
+    </div>
+    
+    <!-- PRIVACY POLICY PAGE -->
+    <div id="privacy-page" class="privacy-page hidden">
+      <div class="container">
+        <h1>Privacy Policy</h1>
+        <p><strong>Effective Date:</strong> [Insert Effective Date]</p>
+        <h2>1. Introduction</h2>
+        <p>
+          Welcome to Donmac Blog ("we", "our", "us"). This Privacy Policy explains how we collect, use, disclose, 
+          and safeguard your information when you visit our website <a href="https://www.yourdonmacblogsite.com">www.yourdonmacblogsite.com</a>. 
+          Please read this Privacy Policy carefully. If you do not agree with the terms of this Privacy Policy, please do not access the site.
+        </p>
+        <h2>2. Information We Collect</h2>
+        <p><strong>Direct Information:</strong> We may collect personal information you provide directly when using our website, for example when you subscribe or fill out a contact form.</p>
+        <p><strong>Automatic Information:</strong> We automatically collect certain information about your device and browsing behavior, including your IP address, browser type, operating system, and pages viewed. We use cookies and similar technologies to help collect this data.</p>
+        <h2>3. How We Use Your Information</h2>
+        <p>We use the information we collect to:</p>
+        <ul>
+          <li>Operate and maintain our website</li>
+          <li>Improve, personalize, and expand our services</li>
+          <li>Understand and analyze how you use our website</li>
+          <li>Communicate with you regarding updates, promotions, and other news</li>
+          <li>Prevent fraud and ensure security</li>
+        </ul>
+        <h2>4. Sharing Your Information</h2>
+        <p>We do not sell or rent your personal information to third parties. We may share your information:</p>
+        <ul>
+          <li>With your consent</li>
+          <li>When required to comply with legal obligations</li>
+          <li>With trusted third parties who assist us, provided they adhere to confidentiality requirements</li>
+        </ul>
+        <h2>5. Data Security</h2>
+        <p>
+          We adopt proper data collection, storage, and processing practices and security measures to protect against unauthorized access,
+          alteration, disclosure, or destruction of your personal information.
+        </p>
+        <h2>6. Cookies and Tracking Technologies</h2>
+        <p>
+          We use cookies and similar tracking technologies to monitor activity on our website. You can instruct your browser to refuse cookies, but some parts of the site may not function properly.
+        </p>
+        <h2>7. Third Party Services</h2>
+        <p>
+          Our website may contain links to third-party sites and services. This Privacy Policy does not apply to such sites.
+        </p>
+        <h2>8. Changes to This Privacy Policy</h2>
+        <p>
+          We may update this Privacy Policy periodically. We will notify you of any changes by posting the new Privacy Policy on this page with an updated Effective Date.
+        </p>
+        <h2>9. Contact Us</h2>
+        <p>
+          If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@yourdonmacblogsite.com">privacy@yourdonmacblogsite.com</a>.
+        </p>
+        <button class="privacy-back-button" onclick="showPage('blog-page')">← <span>Back to Blog</span></button>
+      </div>
+    </div>
+    
+    <!-- LOGIN PAGE -->
+    <div id="login-page" class="login-page hidden">
+      <div class="login-box">
+        <h2 class="login-title">Admin Login</h2>
+        <form class="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="form-control" placeholder="Enter username" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="login-button">Login</button>
+          <button type="button" class="back-to-blog-button" onclick="showPage('blog-page')">← <span>Back to Blog</span></button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="hidden">
+      <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <div class="admin-actions">
+          <button onclick="uploadLogoAdmin()">Change Logo</button>
+          <button onclick="logout()">Logout</button>
+        </div>
+        <input type="file" id="logo-upload-admin" accept="image/*" style="display: none;">
+      </header>
+      <main class="admin-main">
+        <!-- Change Password Option -->
+        <div class="container" style="margin-bottom: 1rem;">
+          <input type="password" id="new-password" class="form-control" placeholder="Enter new admin password">
+          <button class="nav-button" onclick="changePassword()">Change Password</button>
+        </div>
+        <h2 class="section-title">Create New Post</h2>
+        <form id="post-form" class="post-form" onsubmit="createPost(event)">
+          <div class="form-row">
+            <label for="post-title" class="form-label">Post Title</label>
+            <input type="text" id="post-title" class="form-input" required>
+          </div>
+          <div class="form-row">
+            <label for="post-category" class="form-label">Category</label>
+            <select id="post-category" class="form-input" required>
+              <option value="News">News</option>
+              <option value="Finance">Finance</option>
+              <option value="Tutorials">Tutorials</option>
+              <option value="About">About</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="post-thumbnail" class="form-label">Thumbnail Image (Optional)</label>
+            <input type="file" id="post-thumbnail" class="form-input" accept="image/*">
+            <img id="thumbnail-preview" class="thumbnail-preview" src="" alt="Thumbnail Preview">
+          </div>
+          <div class="form-row">
+            <label for="post-content" class="form-label">Content</label>
+            <div id="editor"></div>
+          </div>
+          <button type="submit" class="nav-button">Publish Post</button>
+        </form>
+        
+        <h2 class="section-title">Manage Posts</h2>
+        <div id="posts-list" class="posts-list">
+          <!-- Manage posts list will be loaded here -->
+        </div>
+      </main>
+    </div>
+    
+    <!-- EDIT POST MODAL -->
+    <div id="edit-post-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Edit Post</h2>
+          <button class="close-modal" onclick="closeModal('edit-post-modal')">&times;</button>
+        </div>
+        <form id="edit-post-form" onsubmit="updatePost(event)">
+          <input type="hidden" id="edit-post-id">
+          <div class="form-row">
+            <label for="edit-post-title" class="form-label">Post Title</label>
+            <input type="text" id="edit-post-title" class="form-input" required>
+          </div>
+          <div class="form-row">
+            <label for="edit-post-category" class="form-label">Category</label>
+            <select id="edit-post-category" class="form-input" required>
+              <option value="News">News</option>
+              <option value="Finance">Finance</option>
+              <option value="Tutorials">Tutorials</option>
+              <option value="About">About</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="edit-post-thumbnail" class="form-label">Thumbnail Image (Optional)</label>
+            <input type="file" id="edit-post-thumbnail" class="form-input" accept="image/*">
+            <img id="edit-thumbnail-preview" class="thumbnail-preview" src="" alt="Thumbnail Preview">
+          </div>
+          <div class="form-row">
+            <label for="edit-post-content" class="form-label">Content</label>
+            <div id="edit-editor"></div>
+          </div>
+          <button type="submit" class="nav-button">Update Post</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- VIDEO URL MODAL -->
+    <div id="video-url-modal" class="video-url-modal">
+      <div class="video-url-container">
+        <div class="video-url-header">
+          <h3>Insert Video URL</h3>
+          <button class="close-modal" onclick="closeVideoUrlModal()">&times;</button>
+        </div>
+        <input type="url" id="video-url-input" class="video-url-input" placeholder="Enter video URL (YouTube, Vimeo, etc.)">
+        <div class="video-url-buttons">
+          <button class="nav-button" onclick="closeVideoUrlModal()">Cancel</button>
+          <button class="nav-button" onclick="insertVideoFromUrl()">Insert Video</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SHARE MODAL -->
+    <div id="share-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Share Post</h2>
+          <button class="close-modal" onclick="closeShareModal()">&times;</button>
+        </div>
+        <p>Share this post using the link below or on social media:</p>
+        <input type="text" id="share-link" readonly value="">
+        <button onclick="copyShareLink()">Copy Link</button>
+        <div class="share-options">
+          <button onclick="shareToPlatform('facebook')">Facebook</button>
+          <button onclick="shareToPlatform('twitter')">Twitter</button>
+          <button onclick="shareToPlatform('linkedin')">LinkedIn</button>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- ========= JavaScript Section ========= -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    // Global variables and configuration
+    var isAdmin = false;
+    var quill, editQuill;
+    let currentCategory = "all";
+    const TRUNCATE_LENGTH = 100;
+    const postsPerPage = 6;
+    let currentPage = 1;
+    let currentPostId = null;
+    let currentQuillEditor = null; // To track which editor is active for video insertion
+    
+    // Dummy posts array for demonstration
+    let posts = [
+      { 
+        id: 1, 
+        title: "News Article 1", 
+        category: "News", 
+        content: "This is news content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean in lacus at sapien egestas dignissim.",
+        thumbnail: "https://images.unsplash.com/photo-1495020689067-958852a7765e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      },
+      { 
+        id: 2, 
+        title: "Finance Insights", 
+        category: "Finance", 
+        content: "Finance content goes here. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.",
+        thumbnail: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      },
+      { 
+        id: 3, 
+        title: "Tutorial Post", 
+        category: "Tutorials", 
+        content: "Tutorial content here. Donec id elit non mi porta gravida at eget metus. Curabitur blandit tempus porttitor.",
+        thumbnail: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      },
+      { 
+        id: 4, 
+        title: "Latest News Update", 
+        category: "News", 
+        content: "More news content. Vestibulum id ligula porta felis euismod semper. Maecenas faucibus mollis interdum.",
+        thumbnail: "https://images.unsplash.com/photo-1495020689067-958852a7765e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+      },
+      // Additional posts for pagination demo:
+      { 
+        id: 5, 
+        title: "Extra Post 1", 
+        category: "News", 
+        content: "Extra post content 1.",
+        thumbnail: null
+      },
+      { 
+        id: 6, 
+        title: "Extra Post 2", 
+        category: "Finance", 
+        content: "Extra post content 2.",
+        thumbnail: null
+      },
+      { 
+        id: 7, 
+        title: "Extra Post 3", 
+        category: "Tutorials", 
+        content: "Extra post content 3.",
+        thumbnail: null
+      }
+    ];
+    
+    /* ---------------------------
+       Public View: Load Posts
+    ----------------------------- */
+    function loadPosts() {
+      const container = document.getElementById("posts-container");
+      container.innerHTML = "";
+      
+      let filteredPosts = currentCategory === "all" ? posts : posts.filter(p => p.category === currentCategory);
+      const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+      if(currentPage > totalPages) currentPage = 1;
+      
+      const startIndex = (currentPage - 1) * postsPerPage;
+      const postsToShow = filteredPosts.slice(startIndex, startIndex + postsPerPage);
+      
+      if (filteredPosts.length === 0) {
+        container.innerHTML = "<p>No posts available in this category.</p>";
+      } else {
+        postsToShow.forEach(post => {
+          const postCard = document.createElement("div");
+          postCard.className = "post-card";
+          
+          // Thumbnail image if available
+          let thumbnailHtml = '';
+          if (post.thumbnail) {
+            thumbnailHtml = `<img src="${post.thumbnail}" class="post-thumbnail" alt="${post.title}">`;
+          } else {
+            // Default thumbnail based on category
+            let defaultThumbnail = '';
+            switch(post.category) {
+              case 'News':
+                defaultThumbnail = 'https://images.unsplash.com/photo-1495020689067-958852a7765e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+                break;
+              case 'Finance':
+                defaultThumbnail = 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+                break;
+              case 'Tutorials':
+                defaultThumbnail = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+                break;
+              default:
+                defaultThumbnail = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+            }
+            thumbnailHtml = `<img src="${defaultThumbnail}" class="post-thumbnail" alt="${post.title}">`;
+          }
+          
+          let html = `${thumbnailHtml}
+                      <div class="post-card-content">
+                        <h3 class="post-title">${post.title}</h3>
+                        <div class="post-meta">
+                          <span>${post.category}</span>
+                          <span>${new Date().toLocaleDateString()}</span>
+                        </div>`;
+          const plainText = post.content.replace(/<[^>]+>/g, "");
+          if (plainText.length > TRUNCATE_LENGTH) {
+            html += `<div class="post-content">
+                       <p id="post-content-${post.id}">
+                         ${plainText.substring(0, TRUNCATE_LENGTH)}... <a href="#" onclick="showFullPost(${post.id}); return false;">Read More</a>
+                       </p>
+                     </div>`;
+          } else {
+            html += `<div class="post-content">
+                       <p id="post-content-${post.id}">${post.content}</p>
+                     </div>`;
+          }
+          // Share and comment actions in the grid (share button added)
+          html += `<div class="post-actions">
+                     <a href="#" class="nav-button" onclick="showCommentsPage(${post.id}); return false;">Comments</a>
+                     <button class="nav-button" onclick="openShareModal(${post.id}); return false;">Share</button>
+                     <div class="share-buttons">
+                       <button class="share-btn" onclick="sharePost('facebook', ${post.id})"><i class="fab fa-facebook-f"></i></button>
+                       <button class="share-btn" onclick="sharePost('twitter', ${post.id})"><i class="fab fa-twitter"></i></button>
+                       <button class="share-btn" onclick="sharePost('linkedin', ${post.id})"><i class="fab fa-linkedin-in"></i></button>
+                     </div>
+                   </div>
+                 </div>`;
+          postCard.innerHTML = html;
+          container.appendChild(postCard);
+        });
+      }
+      loadPagination(filteredPosts.length);
+    }
+    
+    /* ---------------------------
+       Share Post Functionality
+       (Direct share buttons remain available)
+    ----------------------------- */
+    function sharePost(platform, postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      const url = window.location.href.split('#')[0] + `#post=${postId}`;
+      const title = post.title;
+      const text = post.content.substring(0, 100) + '...';
+      
+      let shareUrl;
+      switch(platform) {
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+          break;
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
+          break;
+        case 'linkedin':
+          shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(text)}`;
+          break;
+        default:
+          return;
+      }
+      
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+    
+    /* ---------------------------
+       Share Modal Functions
+    ----------------------------- */
+    function openShareModal(postId) {
+      currentPostId = postId;
+      const shareLink = window.location.href.split('#')[0] + "#post=" + postId;
+      document.getElementById("share-link").value = shareLink;
+      document.getElementById("share-modal").classList.remove("hidden");
+      document.getElementById("share-modal").style.display = "flex";
+    }
+    
+    function closeShareModal() {
+      document.getElementById("share-modal").classList.add("hidden");
+      document.getElementById("share-modal").style.display = "none";
+    }
+    
+    function copyShareLink() {
+      const shareLinkInput = document.getElementById("share-link");
+      shareLinkInput.select();
+      shareLinkInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(shareLinkInput.value).then(() => {
+        alert("Link copied to clipboard!");
+      });
+    }
+    
+    function shareToPlatform(platform) {
+      const shareLink = document.getElementById("share-link").value;
+      const title = document.querySelector(".full-post-title") ? document.querySelector(".full-post-title").textContent : "Donmac Blog Post";
+      let shareUrl = "";
+      switch(platform) {
+        case "facebook":
+          shareUrl = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(shareLink);
+          break;
+        case "twitter":
+          shareUrl = "https://twitter.com/intent/tweet?url=" + encodeURIComponent(shareLink) + "&text=" + encodeURIComponent(title);
+          break;
+        case "linkedin":
+          shareUrl = "https://www.linkedin.com/shareArticle?mini=true&url=" + encodeURIComponent(shareLink) + "&title=" + encodeURIComponent(title);
+          break;
+        default:
+          return;
+      }
+      window.open(shareUrl, "_blank", "width=600,height=400");
+    }
+    
+    /* ---------------------------
+       Show Full Post Page
+    ----------------------------- */
+    function showFullPost(postId) {
+      currentPostId = postId;
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      const container = document.getElementById("full-post-container");
+      let thumbnailHtml = '';
+      if (post.thumbnail) {
+        thumbnailHtml = `<img src="${post.thumbnail}" class="full-post-thumbnail" alt="${post.title}">`;
+      }
+      
+      container.innerHTML = `
+        ${thumbnailHtml}
+        <div class="full-post-content">
+          <h2 class="full-post-title">${post.title}</h2>
+          <div class="full-post-meta">
+            <span>Category: ${post.category}</span>
+            <span>Published: ${new Date().toLocaleDateString()}</span>
+          </div>
+          <div class="full-post-content">${post.content}</div>
+        </div>
+      `;
+      
+      showPage("full-post-page");
+      updateThemeIcon(document.documentElement.getAttribute("data-theme") || "light", "full");
+    }
+    
+    /* ---------------------------
+       Show Comments Page
+    ----------------------------- */
+    function showCommentsPage(postId) {
+      currentPostId = postId;
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      const container = document.getElementById("comments-container");
+      container.innerHTML = `
+        <h2>Comments on "${post.title}"</h2>
+        <div class="comments-list" id="comments-list"></div>
+        <div class="comment-form">
+          <h3>Add Your Comment</h3>
+          <textarea id="comment-text" placeholder="Write your comment here..."></textarea>
+          <button class="nav-button" onclick="addComment()">Post Comment</button>
+        </div>
+      `;
+      
+      loadComments();
+      showPage("comments-page");
+      updateThemeIcon(document.documentElement.getAttribute("data-theme") || "light", "comments");
+    }
+    
+    /* ---------------------------
+       Load Comments for Current Post
+    ----------------------------- */
+    function loadComments() {
+      let comments = JSON.parse(localStorage.getItem("comments-" + currentPostId)) || [];
+      let container = document.getElementById("comments-list");
+      if (container) {
+        container.innerHTML = "";
+        if (comments.length === 0) {
+          container.innerHTML = "<p>No comments yet. Be the first to comment!</p>";
+        } else {
+          comments.forEach(comment => {
+            let commentElement = document.createElement("div");
+            commentElement.className = "comment-box";
+            commentElement.innerHTML = `<strong>Anonymous</strong><br>${comment.text}`;
+            container.appendChild(commentElement);
+          });
+        }
+      }
+    }
+    
+    /* ---------------------------
+       Add Comment to Current Post
+    ----------------------------- */
+    function addComment() {
+      let text = document.getElementById("comment-text").value.trim();
+      if (!text) {
+        alert("Please provide a comment.");
+        return;
+      }
+      let comments = JSON.parse(localStorage.getItem("comments-" + currentPostId)) || [];
+      comments.push({ text: text });
+      localStorage.setItem("comments-" + currentPostId, JSON.stringify(comments));
+      document.getElementById("comment-text").value = "";
+      loadComments();
+    }
+    
+    /* ---------------------------
+       Pagination Functions
+    ----------------------------- */
+    function loadPagination(totalPosts) {
+      const container = document.getElementById("pagination-container");
+      container.innerHTML = "";
+      const totalPages = Math.ceil(totalPosts / postsPerPage);
+      if(totalPages <= 1) return;
+      
+      const prevBtn = document.createElement("button");
+      prevBtn.className = "pagination-button";
+      prevBtn.textContent = "Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = function() { setPage(currentPage - 1); };
+      container.appendChild(prevBtn);
+      
+      for(let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.className = "pagination-button";
+        btn.textContent = i;
+        if(i === currentPage) { btn.classList.add("active"); }
+        btn.onclick = function() { setPage(i); };
+        container.appendChild(btn);
+      }
+      
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "pagination-button";
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = function() { setPage(currentPage + 1); };
+      container.appendChild(nextBtn);
+    }
+    
+    function setPage(pageNumber) {
+      currentPage = pageNumber;
+      loadPosts();
+    }
+    
+    /* ---------------------------
+       Navigation Functions
+    ----------------------------- */
+    function filterPosts(category) {
+      currentCategory = category;
+      currentPage = 1;
+      loadPosts();
+    }
+    
+    function showAboutPage() {
+      document.getElementById("about-container").classList.remove("hidden");
+      document.getElementById("posts-container").classList.add("hidden");
+    }
+    
+    function showBlogPosts() {
+      document.getElementById("about-container").classList.add("hidden");
+      document.getElementById("posts-container").classList.remove("hidden");
+      loadPosts();
+    }
+    
+    function search() {
+      let query = prompt("Enter search term:");
+      if (query !== null) {
+        query = query.toLowerCase();
+        const container = document.getElementById("posts-container");
+        container.innerHTML = "";
+        let filteredPosts = posts.filter(post =>
+          post.title.toLowerCase().includes(query) ||
+          post.content.toLowerCase().includes(query)
+        );
+        currentPage = 1;
+        if (filteredPosts.length === 0) {
+          container.innerHTML = `<p>No results found for "${query}"</p>`;
+        } else {
+          filteredPosts.forEach(post => {
+            const postCard = document.createElement("div");
+            postCard.className = "post-card";
+            
+            // Thumbnail image if available
+            let thumbnailHtml = '';
+            if (post.thumbnail) {
+              thumbnailHtml = `<img src="${post.thumbnail}" class="post-thumbnail" alt="${post.title}">`;
+            }
+            
+            let html = `${thumbnailHtml}
+                        <div class="post-card-content">
+                          <h3 class="post-title">${post.title}</h3>
+                          <div class="post-meta">
+                            <span>${post.category}</span>
+                            <span>${new Date().toLocaleDateString()}</span>
+                          </div>`;
+            const plainText = post.content.replace(/<[^>]+>/g, "");
+            if (plainText.length > TRUNCATE_LENGTH) {
+              html += `<div class="post-content">
+                         <p id="post-content-${post.id}">
+                           ${plainText.substring(0, TRUNCATE_LENGTH)}... <a href="#" onclick="showFullPost(${post.id}); return false;">Read More</a>
+                         </p>
+                       </div>`;
+            } else {
+              html += `<div class="post-content">
+                         <p id="post-content-${post.id}">${post.content}</p>
+                       </div>`;
+            }
+            html += `<div class="post-actions">
+                       <a href="#" class="nav-button" onclick="showCommentsPage(${post.id}); return false;">Comments</a>
+                       <button class="nav-button" onclick="openShareModal(${post.id}); return false;">Share</button>
+                       <div class="share-buttons">
+                         <button class="share-btn" onclick="sharePost('facebook', ${post.id})"><i class="fab fa-facebook-f"></i></button>
+                         <button class="share-btn" onclick="sharePost('twitter', ${post.id})"><i class="fab fa-twitter"></i></button>
+                         <button class="share-btn" onclick="sharePost('linkedin', ${post.id})"><i class="fab fa-linkedin-in"></i></button>
+                       </div>
+                     </div>
+                   </div>`;
+            postCard.innerHTML = html;
+            container.appendChild(postCard);
+          });
+        }
+      } else {
+        loadPosts();
+      }
+    }
+    
+    /* ---------------------------
+       Admin Dashboard: Manage Posts
+    ----------------------------- */
+    function loadManagePosts() {
+      const container = document.getElementById("posts-list");
+      container.innerHTML = "";
+      if (posts.length === 0) {
+        container.innerHTML = "<p>No posts available.</p>";
+        return;
+      }
+      posts.forEach(post => {
+        const item = document.createElement("div");
+        item.className = "manage-post-item";
+        item.innerHTML = `<div><strong>${post.title}</strong> (${post.category})</div>
+                          <div class="manage-post-actions">
+                            <button onclick="editPost(${post.id})">Edit</button>
+                            <button onclick="deletePost(${post.id})">Delete</button>
+                          </div>`;
+        container.appendChild(item);
+      });
+    }
+    
+    function createPost(event) {
+      event.preventDefault();
+      const title = document.getElementById("post-title").value.trim();
+      const category = document.getElementById("post-category").value;
+      const content = quill.root.innerHTML;
+      const thumbnailInput = document.getElementById("post-thumbnail");
+      
+      if (title === "" || content.trim() === "<p><br></p>") {
+        alert("Please enter a valid title and content.");
+        return;
+      }
+      
+      // Handle thumbnail if provided
+      let thumbnail = null;
+      if (thumbnailInput.files && thumbnailInput.files[0]) {
+        const file = thumbnailInput.files[0];
+        thumbnail = URL.createObjectURL(file);
+      }
+      
+      const newPost = { 
+        id: Date.now(), 
+        title, 
+        category, 
+        content,
+        thumbnail 
+      };
+      
+      posts.push(newPost);
+      document.getElementById("post-title").value = "";
+      document.getElementById("post-category").selectedIndex = 0;
+      document.getElementById("post-thumbnail").value = "";
+      document.getElementById("thumbnail-preview").style.display = "none";
+      quill.setText("");
+      
+      loadPosts();
+      loadManagePosts();
+      alert("Post published successfully!");
+    }
+    
+    function deletePost(postId) {
+      if (confirm("Are you sure you want to delete this post?")) {
+        posts = posts.filter(p => p.id !== postId);
+        loadPosts();
+        loadManagePosts();
+      }
+    }
+    
+    function editPost(postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      document.getElementById("edit-post-id").value = post.id;
+      document.getElementById("edit-post-title").value = post.title;
+      document.getElementById("edit-post-category").value = post.category;
+      editQuill.root.innerHTML = post.content;
+      
+      // Show current thumbnail if exists
+      const thumbnailPreview = document.getElementById("edit-thumbnail-preview");
+      if (post.thumbnail) {
+        thumbnailPreview.src = post.thumbnail;
+        thumbnailPreview.style.display = "block";
+      } else {
+        thumbnailPreview.style.display = "none";
+      }
+      
+      document.getElementById("edit-post-modal").classList.remove("hidden");
+    }
+    
+    function updatePost(event) {
+      event.preventDefault();
+      const postId = parseInt(document.getElementById("edit-post-id").value);
+      const title = document.getElementById("edit-post-title").value.trim();
+      const category = document.getElementById("edit-post-category").value;
+      const content = editQuill.root.innerHTML;
+      const thumbnailInput = document.getElementById("edit-post-thumbnail");
+      
+      // Handle thumbnail update if provided
+      let thumbnail = posts.find(p => p.id === postId).thumbnail;
+      if (thumbnailInput.files && thumbnailInput.files[0]) {
+        const file = thumbnailInput.files[0];
+        thumbnail = URL.createObjectURL(file);
+      }
+      
+      posts = posts.map(p => p.id === postId ? { ...p, title, category, content, thumbnail } : p);
+      loadPosts();
+      loadManagePosts();
+      closeModal("edit-post-modal");
+      alert("Post updated successfully!");
+    }
+    
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add("hidden");
+    }
+    
+    /* ---------------------------
+       Video URL Modal Functions
+    ----------------------------- */
+    function showVideoUrlModal(editor) {
+      currentQuillEditor = editor;
+      document.getElementById('video-url-modal').style.display = 'flex';
+      document.getElementById('video-url-input').value = '';
+      document.getElementById('video-url-input').focus();
+    }
+    
+    function closeVideoUrlModal() {
+      document.getElementById('video-url-modal').style.display = 'none';
+      currentQuillEditor = null;
+    }
+    
+    function insertVideoFromUrl() {
+      const url = document.getElementById('video-url-input').value.trim();
+      if (!url) {
+        alert('Please enter a video URL');
+        return;
+      }
+      
+      if (currentQuillEditor) {
+        // Check if it's a YouTube or Vimeo URL for embedding
+        let embedHtml = '';
+        
+        // YouTube embed
+        const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([^&\n?#]+)/);
+        if (youtubeMatch) {
+          const videoId = youtubeMatch[1];
+          embedHtml = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        }
+        // Vimeo embed
+        else if (url.includes('vimeo.com')) {
+          const videoId = url.split('/').pop();
+          embedHtml = `<iframe src="https://player.vimeo.com/video/${videoId}" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        }
+        // Direct video URL
+        else if (url.match(/\.(mp4|webm|ogg)$/i)) {
+          embedHtml = `<video controls width="100%"><source src="${url}" type="video/${url.split('.').pop().toLowerCase()}"></video>`;
+        }
+        else {
+          alert('Please enter a valid YouTube, Vimeo, or direct video URL (.mp4, .webm, .ogg)');
+          return;
+        }
+        
+        const range = currentQuillEditor.getSelection();
+        currentQuillEditor.clipboard.dangerouslyPasteHTML(range.index, embedHtml);
+        closeVideoUrlModal();
+      }
+    }
+    
+    /* ---------------------------
+       Secure Admin Login & Password Management
+       - Uses SHA-256 hashing (Web Crypto API)
+       - First-time login creates the admin password
+    ----------------------------- */
+    function hashPassword(password) {
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(password))
+        .then(hash => Array.from(new Uint8Array(hash)).map(byte => byte.toString(16).padStart(2, '0')).join(''));
+    }
+    
+    async function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const storedHash = localStorage.getItem("adminPassword");
+      
+      if (!storedHash) {
+        // First-time login: create admin account with entered password
+        const newHash = await hashPassword(password);
+        localStorage.setItem("adminPassword", newHash);
+        alert("No admin account found. New admin account created. Please change the password if desired.");
+        sessionStorage.setItem("isAdmin", "true");
+        showPage("admin-dashboard");
+        return;
+      }
+      
+      const hashedPassword = await hashPassword(password);
+      if (hashedPassword === storedHash && username.toLowerCase() === "admin") {
+        sessionStorage.setItem("isAdmin", "true");
+        alert("Login successful!");
+        showPage("admin-dashboard");
+      } else {
+        alert("Invalid credentials!");
+      }
+    }
+    
+    async function changePassword() {
+      const newPassword = document.getElementById("new-password").value.trim();
+      if (!newPassword) {
+        alert("Please enter a new password.");
+        return;
+      }
+      const newHash = await hashPassword(newPassword);
+      localStorage.setItem("adminPassword", newHash);
+      alert("Password changed successfully!");
+    }
+    
+    function logout() {
+      sessionStorage.removeItem("isAdmin");
+      alert("Logged out successfully!");
+      showPage("blog-page");
+    }
+    
+    /* ---------------------------
+       Logo Change Feature
+    ----------------------------- */
+    function uploadLogo() {
+      const fileInput = document.getElementById("logo-upload");
+      fileInput.click();
+      fileInput.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const logoImg = document.querySelector(".logo");
+          logoImg.textContent = "D";
+          logoImg.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+          logoImg.style.backgroundSize = "cover";
+          logoImg.style.color = "transparent";
+          console.log("Logo updated from public view:", file.name);
+        }
+      }
+    }
+    
+    function uploadLogoAdmin() {
+      const fileInput = document.getElementById("logo-upload-admin");
+      fileInput.click();
+      fileInput.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const logoImg = document.querySelector(".logo");
+          logoImg.textContent = "D";
+          logoImg.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+          logoImg.style.backgroundSize = "cover";
+          logoImg.style.color = "transparent";
+          console.log("Logo updated from admin dashboard:", file.name);
+          alert("Logo updated successfully!");
+        }
+      }
+    }
+    
+    /* ---------------------------
+       Theme Toggle
+    ----------------------------- */
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const currentTheme = htmlEl.getAttribute("data-theme") || "light";
+      const newTheme = currentTheme === "light" ? "dark" : "light";
+      htmlEl.setAttribute("data-theme", newTheme);
+      updateThemeIcon(newTheme);
+    }
+    
+    function updateThemeIcon(theme, page = '') {
+      const themeIcon = document.getElementById(`theme-icon${page ? '-' + page : ''}`);
+      themeIcon.textContent = theme === "light" ? "☀️" : "🌙";
+    }
+    
+    /* ---------------------------
+       Page Switcher: Show/Hide pages
+    ----------------------------- */
+    function showPage(pageId) {
+      // Hide all pages first
+      document.getElementById("blog-page").classList.add("hidden");
+      document.getElementById("full-post-page").classList.add("hidden");
+      document.getElementById("comments-page").classList.add("hidden");
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("admin-dashboard").classList.add("hidden");
+      document.getElementById("privacy-page").classList.add("hidden");
+      // Show requested page
+      document.getElementById(pageId).classList.remove("hidden");
+    }
+    
+    /* ---------------------------
+       Initialization on DOMContentLoaded
+    ----------------------------- */
+    document.addEventListener("DOMContentLoaded", function() {
+      const toolbarOptions = [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'script': 'sub' }, { 'script': 'super' }],
+        [{ 'indent': '-1' }, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['link'],
+        ['clean'],
+        ['image', { 'video': 'video-url' }] // Custom video handler
+      ];
+
+      // Initialize Quill editors with custom image and video handlers
+      quill = new Quill("#editor", {
+        theme: "snow",
+        modules: {
+          toolbar: {
+            container: toolbarOptions,
+            handlers: {
+              image: imageHandler,
+              'video-url': function() {
+                showVideoUrlModal(quill);
+              }
+            }
+          }
+        }
+      });
+      
+      editQuill = new Quill("#edit-editor", {
+        theme: "snow",
+        modules: {
+          toolbar: {
+            container: toolbarOptions,
+            handlers: {
+              image: imageHandler,
+              'video-url': function() {
+                showVideoUrlModal(editQuill);
+              }
+            }
+          }
+        }
+      });
+      
+      // Handle thumbnail preview for new posts
+      document.getElementById('post-thumbnail').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const preview = document.getElementById('thumbnail-preview');
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        }
+      });
+      
+      // Handle thumbnail preview for editing posts
+      document.getElementById('edit-post-thumbnail').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const preview = document.getElementById('edit-thumbnail-preview');
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        }
+      });
+      
+      if (!document.documentElement.getAttribute("data-theme")) {
+        document.documentElement.setAttribute("data-theme", "light");
+        updateThemeIcon("light");
+      }
+      loadPosts();
+    });
+    
+    /* ---------------------------
+       Custom Image Handler for Quill
+    ----------------------------- */
+    function imageHandler() {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+      
+      input.onchange = async function() {
+        const file = input.files[0];
+        if (!file) return;
+        
+        // Create a placeholder image while uploading
+        const range = this.quill.getSelection();
+        const placeholder = 'Uploading image...';
+        this.quill.insertText(range.index, placeholder);
+        
+        // Read the file and insert as base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          // Replace placeholder with actual image
+          this.quill.deleteText(range.index, placeholder.length);
+          this.quill.insertEmbed(range.index, 'image', e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }.bind(this);
+    }
+    
+    // Expose functions for inline event handlers
+    window.toggleTheme = toggleTheme;
+    window.showPage = showPage;
+    window.uploadLogo = uploadLogo;
+    window.uploadLogoAdmin = uploadLogoAdmin;
+    window.filterPosts = filterPosts;
+    window.showBlogPosts = showBlogPosts;
+    window.showAboutPage = showAboutPage;
+    window.showFullPost = showFullPost;
+    window.showCommentsPage = showCommentsPage;
+    window.search = search;
+    window.handleLogin = handleLogin;
+    window.editPost = editPost;
+    window.deletePost = deletePost;
+    window.closeModal = closeModal;
+    window.createPost = createPost;
+    window.updatePost = updatePost;
+    window.logout = logout;
+    window.changePassword = changePassword;
+    window.loadComments = loadComments;
+    window.addComment = addComment;
+    window.sharePost = sharePost;
+    window.showVideoUrlModal = showVideoUrlModal;
+    window.closeVideoUrlModal = closeVideoUrlModal;
+    window.insertVideoFromUrl = insertVideoFromUrl;
+    window.openShareModal = openShareModal;
+    window.closeShareModal = closeShareModal;
+    window.copyShareLink = copyShareLink;
+    window.shareToPlatform = shareToPlatform;
+  </script>
+</body>
+</html>
